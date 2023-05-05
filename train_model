@@ -1,0 +1,118 @@
+
+def train_step(model,
+               train_dataloader,
+               test_dataloader,
+               optimizer,
+               loss_fn,
+               n_epochs,
+               device):
+    train_loss, train_acc = 0, 0
+
+    model.train()
+
+    for batch, (X, y) in enumerate(train_dataloader):
+
+        X = X.to(device)
+        y = y.to(device)
+
+        y_logit = model(X)
+
+        loss = loss_fn(y_logit, y)
+
+        train_loss += loss.item()
+
+        optimizer.zero_grad()
+
+        loss.backward()
+
+        optimizer.step()
+
+    train_loss = train_loss / len(train_dataloader)
+    train_acc = 1
+
+    return train_loss, train_acc
+
+def test_step(model,
+              train_dataloader,
+              test_dataloader,
+              optimizer,
+              loss_fn,
+              n_epochs,
+              device):
+    test_loss, test_acc = 0, 0
+
+    model.eval()
+    with torch.inference_mode():
+        for batch, (X, y) in enumerate(test_dataloader):
+
+            X = X.to(device)
+            y = y.to(device)
+
+            y_logit = model(X)
+
+            loss = loss_fn(y_logit, y)
+
+            test_loss += loss.item()
+
+    test_loss = test_loss / len(test_dataloader)
+    test_acc = 1
+
+    return test_loss, test_acc
+    
+def train_model(model,
+                train_dataloader,
+                test_dataloader,
+                optimizer,
+                loss_fn,
+                n_epochs,
+                device):
+    
+    result = {
+        "pred_train_loss" : [],
+        "pred_train_acc" : [],
+        "pred_test_loss" : [],
+        "pred_test_acc" : []
+    }
+    
+    for epoch in tqdm(range(n_epochs)):
+        train_loss, train_acc = train_step(model=model,
+                                           train_dataloader=train_dataloader,
+                                           test_dataloader=test_dataloader,
+                                           optimizer=optimizer,
+                                           loss_fn=loss_fn,
+                                           n_epochs=10,
+                                           device=device)
+        test_loss, test_acc = test_step(model=model,
+                                        train_dataloader=train_dataloader,
+                                        test_dataloader=test_dataloader,
+                                        optimizer=optimizer,
+                                        loss_fn=loss_fn,
+                                        n_epochs=10,
+                                        device=device)
+        
+        result["pred_train_loss"].append(train_loss)
+        result["pred_train_acc"].append(train_acc)
+        result["pred_test_loss"].append(test_loss)
+        result["pred_test_acc"].append(test_acc)
+        
+        print(
+            f"epoch : {epoch+1} | "
+            f"train_loss : {train_loss:.4f} | "
+            f"train_acc : {train_acc:.4f} | "
+            f"test_loss : {test_loss:.4f} | "
+            f"test_acc : {test_acc:.4f}"
+        )
+        
+        
+    return result
+        
+    
+    
+    
+result = train_model(model=model,
+            train_dataloader=train_dataloader,
+            test_dataloader=test_dataloader,
+            optimizer=optimizer,
+            loss_fn=loss_fn,
+            n_epochs=10,
+            device=device)
